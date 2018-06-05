@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<style type="text/css">
+	*{
+		padding: 0;margin: 0;
+	}
+	html,body{
+	    height:100%;
+	}
+	body{
+	    background:radial-gradient(ellipse at center,#34679a 0%, #214163 50%, #0d1926 100%);/*径向渐变   椭圆*/
+	}
+	</style>
+</head>
+<body>
+	<canvas height="600" width="620"  id="canvas" style="background:rgba(255,255,255,0);"></canvas>
+	<img src="./small.png">
+	<img src="./center.png">
+
+	<script type="text/javascript">
+		(function () {
+		  var canvasEl = document.getElementById('canvas');
+		  //创建Context对象
+		  var ctx = canvasEl.getContext('2d');
+		  var mousePos = [0, 0];
+
+		  var easingFactor = 5.0;
+		  var backgroundColor = '#04103a';
+		  var nodeColor = '#fff';
+		  var edgeColor = '#062d91';
+
+		  // 存储星星和边
+		  var nodes = [];
+		  var edges = [];
+
+		  var detaltime = 0
+		  var lasttime = Date.now();
+
+		  // 构建星星
+		  function constructNodes() {
+		    for (var i = 0; i < 5; i++) {
+		      var node = {
+		        x: Math.random() * canvasEl.width,
+		        y: Math.random() * canvasEl.height,
+		        vx: Math.random() * 1 - 0.5,
+		        vy: Math.random() * 1 - 0.5,
+		        radius: Math.random() > 0.9 ? 3 + Math.random() * 3 : 1 + Math.random() * 3,
+		        isMax: Math.random() > 0.3? true: false,
+		        time: 0,
+		        life_time: (Math.random()*2 + 2) * 1000,
+		        jianbain: 0,
+		        star_pic : new Image(),
+		        star2_pic : new Image()
+		      };
+		      node.star_pic.src = "./small.png";
+    	  	  node.star2_pic.src = "./center.png";
+		      nodes.push(node);
+		    }
+
+		    nodes.forEach(function (e) {
+		      nodes.forEach(function (e2) {
+		        if (e == e2) {
+		          return;
+		        }
+
+		        var edge = {
+		          from: e,
+		          to: e2
+		        }
+
+		        addEdge(edge);
+		      });
+		    });
+		  }
+
+		  // 构建连线
+		  function addEdge(edge) {
+		    var ignore = false;
+
+		    edges.forEach(function (e) {
+		      if (e.from == edge.from && e.to == edge.to) {
+		        ignore = true;
+		      }
+
+		      if (e.to == edge.from && e.from == edge.to) {
+		        ignore = true;
+		      }
+		    });
+
+		    if (!ignore) {
+		      edges.push(edge);
+		    }
+		  }
+
+		  // 让点动起来
+		  function step() {
+		    nodes.forEach(function (e) {
+		      e.x += e.vx;
+		      e.y += e.vy;
+
+		      function clamp(min, max, value) {
+		        if (value > max) {
+		          return max;
+		        } else if (value < min) {
+		          return min;
+		        } else {
+		          return value;
+		        }
+		      }
+
+		      if (e.x <= 0 || e.x >= canvasEl.width) {
+		        e.vx *= -1;
+		        e.x = clamp(0, canvasEl.width, e.x)
+		      }
+
+		      if (e.y <= 0 || e.y >= canvasEl.height) {
+		        e.vy *= -1;
+		        e.y = clamp(0, canvasEl.height, e.y)
+		      }
+		      // 让星星发生闪动效果
+	      	   if(e.isMax){
+	      	       if(e.time >= e.life_time){
+	      	           e.isMax = false
+	      	       }
+	      	       else if(e.time < e.life_time){
+	      	       		if(e.time <= 2 * e.life_time / 5){
+	      	       		    ctx.save();
+	      	       		    ctx.globalAlpha = e.jianbain;
+	      	       		    ctx.beginPath();
+	      	       		    ctx.drawImage(e.star_pic, e.x-20, e.y-20, 40 , 40);
+	      	       		    ctx.closePath();
+	      	       		    ctx.restore();
+	      	       		    e.jianbain +=  0.03;
+	      	       		}else if(e.time <= 3 * e.life_time / 5){
+	      	       		    ctx.save();
+	      	       		    ctx.drawImage(e.star2_pic, e.x-20, e.y-20, 40 , 40);
+	      	       		    ctx.restore();
+	      	       		    e.jianbain = 1;
+	      	       		}
+	      	       		else if(e.time < e.life_time){
+	      	       		    ctx.save();
+	      	       		    ctx.globalAlpha = e.jianbain;
+	      	       		    ctx.beginPath();
+	      	       		    ctx.drawImage(e.star_pic, e.x-20, e.y-20, 40 , 40);
+	      	       		    ctx.closePath();
+	      	       		    ctx.restore();
+	      	       		    e.jianbain -=  0.03;
+	      	       		}
+	      	       }
+	      	       e.time += 20;
+	      	   }
+	      	   else{
+	      	   		e.time = 0
+	      	   		e.jianbain = 0
+	      	   		e.isMax = true
+	      	       ctx.save();
+	      	       ctx.globalAlpha = 0.5;
+	      	       ctx.beginPath();
+	      	       ctx.drawImage(e.star_pic, e.x-10, e.y-10, 20 , 20);
+	      	       ctx.closePath();
+	      	       ctx.restore();
+	      	       // e.isMax = true
+	      	   }
+		    });
+
+		    render();
+	 
+		    window.requestAnimationFrame(step);
+
+		  }
+
+		  // 绘制
+		  function render() {
+		  	// console.log(edges)
+		    ctx.fillStyle = backgroundColor;
+		    // ctx.fillStyle = 'rgba(255, 255, 255, 0)';
+		    ctx.globalAlpha = 0.5;
+		    ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+		    // 绘制线条
+		    edges.forEach(function (e,index) {
+		      // 笔触颜色
+		      ctx.strokeStyle = edgeColor;
+		      ctx.lineWidth = 0.5;
+		      // 设置或返回绘图的当前 alpha 或透明值
+		      ctx.globalAlpha = 1;
+		      // 起始一条路径，或重置当前路径
+		      ctx.beginPath();
+		      // 把路径移动到画布中的指定点，不创建线条
+		      ctx.moveTo(e.from.x, e.from.y);
+		      // 添加一个新点，然后在画布中创建从该点到最后指定点的线条
+		      ctx.lineTo(e.to.x, e.to.y);
+		      // 绘制已定义的路径
+		      ctx.stroke();
+		    });
+		    // ctx.globalAlpha = 1.0;
+
+		    // 绘制星星
+		    nodes.forEach(function (e,index) {
+			   if(e.isMax){
+	               ctx.save();
+	               ctx.globalAlpha = e.jianbain;
+	               ctx.beginPath();
+	               ctx.drawImage(e.star_pic, e.x-10, e.y-10, 20 , 20);
+	               ctx.closePath();
+	               ctx.restore();
+	               e.jianbain +=  0.3;
+			   }
+			   else{
+			       ctx.save();
+			       ctx.globalAlpha = 0.5;
+			       ctx.beginPath();
+			       ctx.drawImage(e.star2_pic, e.x-10, e.y-10, 20 , 20);
+			       ctx.closePath();
+			       ctx.restore();
+			   }
+		    });
+		  }
+
+		  // 画布大小变化是重绘
+		  window.onresize = function () {
+		    canvasEl.width = canvasEl.clientWidth;
+		    canvasEl.height = canvasEl.clientHeight;
+
+		    if (nodes.length == 0) {
+		      constructNodes();
+		    }
+
+		    render();
+		  };
+
+		  window.onresize(); // trigger the event manually.
+		  window.requestAnimationFrame(step);
+		}).call(this);
+	</script>
+</body>
+</html>
